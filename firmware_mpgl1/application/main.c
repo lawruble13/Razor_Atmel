@@ -68,6 +68,7 @@ void main(void)
 
   /* Application initialization */
     UserAppInitialize();
+    LEDTestInitialize();
   
   /* Exit initialization */
   SystemStatusReport();
@@ -92,6 +93,7 @@ void main(void)
 
     /* Applications */
     UserAppRunActiveState();
+    LEDTestRunActiveState();
     
     /* System sleep*/
     HEARTBEAT_OFF();

@@ -2036,6 +2036,9 @@
         <name>$PROJ_DIR$\..\..\firmware_mpg_common\application\debug.h</name>
       </file>
       <file>
+        <name>$PROJ_DIR$\..\..\firmware_mpg_common\application\ledtest.h</name>
+      </file>
+      <file>
         <name>$PROJ_DIR$\..\application\main.h</name>
       </file>
       <file>
@@ -2049,6 +2052,9 @@
       <name>Source</name>
       <file>
         <name>$PROJ_DIR$\..\..\firmware_mpg_common\application\debug.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\..\firmware_mpg_common\application\ledtest.c</name>
       </file>
       <file>
         <name>$PROJ_DIR$\..\application\main.c</name>
