@@ -91,6 +91,7 @@ void LEDTestInitialize(void)
   LedPWM(LCD_RED,LED_PWM_100);
   LedPWM(LCD_GREEN,LED_PWM_0);
   LedPWM(LCD_BLUE,LED_PWM_0);
+  LCDClearChars((u8)0,(u8)40);
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -138,7 +139,7 @@ State Machine Function Definitions
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for a message to be queued */
 static void LEDTestSM_Idle(void)
-{  
+{
   static u16 u16BinaryCounter  = 0;
   static u8 u8BinaryCounter    = 0;
   static LedNumberType aeCurrentLed[] = {LCD_GREEN,LCD_RED,LCD_BLUE,LCD_GREEN,LCD_RED,LCD_BLUE};
