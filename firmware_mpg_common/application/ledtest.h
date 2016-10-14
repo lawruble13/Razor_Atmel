@@ -50,6 +50,7 @@ static void LEDTestSM_Idle(void);
 
 static void LEDTestSM_Error(void);         
 static void LEDTestSM_FailedInit(void);        
+#define COLOR_CYCLE_TIME (u16)40
 
 
 #endif /* __LEDTEST_H */

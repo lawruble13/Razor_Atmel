@@ -31,7 +31,9 @@ Global variable definitions with scope across entire project.
 All Global variable names shall start with "G_"
 ***********************************************************************************************************************/
 /* New variables */
-volatile u32 G_u32LEDTestFlags;                       /* Global state flags */
+volatile u32 G_u32LEDTestFlags; 
+
+/* Global state flags */
 
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -78,7 +80,6 @@ Promises:
 */
 void LEDTestInitialize(void)
 {
-  
   LedOff(WHITE);
   LedOff(PURPLE);
   LedOff(BLUE);
@@ -87,10 +88,9 @@ void LEDTestInitialize(void)
   LedOff(YELLOW);
   LedOff(ORANGE);
   LedOff(RED);
-  LedOn(LCD_RED);
-  LedOn(LCD_GREEN);
-  LedOn(LCD_BLUE);
-  LedBlink(BLUE,LED_2HZ);
+  LedPWM(LCD_RED,LED_PWM_100);
+  LedPWM(LCD_GREEN,LED_PWM_0);
+  LedPWM(LCD_BLUE,LED_PWM_0);
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -138,8 +138,54 @@ State Machine Function Definitions
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for a message to be queued */
 static void LEDTestSM_Idle(void)
-{
-    
+{  
+  static u16 u16BinaryCounter  = 0;
+  static u8 u8BinaryCounter    = 0;
+  static LedNumberType aeCurrentLed[] = {LCD_GREEN,LCD_RED,LCD_BLUE,LCD_GREEN,LCD_RED,LCD_BLUE};
+  static bool abLedRateIncreasing[]   = {TRUE,     FALSE,  TRUE,    FALSE,    TRUE,   FALSE};
+  static u8 u8CurrentLedIndex  = 0;
+  static u8 u8LedCurrentLevel  = 0;
+  static u8 u8DutyCycleCounter = 0;
+  static u16 u16Counter = COLOR_CYCLE_TIME;
+  static bool CyclingOn = TRUE;
+  u16BinaryCounter++;
+  if(CyclingOn)
+    u16Counter--;
+  if(u16Counter == 0){
+    u16Counter = COLOR_CYCLE_TIME;
+    LedPWM((LedNumberType)aeCurrentLed[u8CurrentLedIndex], (LedRateType)u8LedCurrentLevel);
+    if(abLedRateIncreasing[u8CurrentLedIndex]){
+      u8LedCurrentLevel++;
+    } else {
+      u8LedCurrentLevel--;
+    }
+    u8DutyCycleCounter++;
+    if(u8DutyCycleCounter == 20){
+      u8DutyCycleCounter = 0;
+      
+      u8CurrentLedIndex++;
+      if(u8CurrentLedIndex == sizeof(aeCurrentLed))
+        u8CurrentLedIndex = 0;
+      
+      u8LedCurrentLevel=20;
+      if(abLedRateIncreasing[u8CurrentLedIndex])
+        u8LedCurrentLevel=0;
+    }
+  }
+  if(WasButtonPressed(BUTTON0)){
+    ButtonAcknowledge(BUTTON0);
+    CyclingOn = (bool)!CyclingOn;
+  }
+  if(u16BinaryCounter == 500){
+    u16BinaryCounter=0;
+    u8BinaryCounter++;
+    if(u8BinaryCounter == 16) u8BinaryCounter = 0;
+    (u8BinaryCounter & 0x01) ? LedOn(RED) : LedOff(RED);
+    (u8BinaryCounter & 0x02) ? LedOn(ORANGE) : LedOff(ORANGE);
+    (u8BinaryCounter & 0x04) ? LedOn(YELLOW) : LedOff(YELLOW);
+    (u8BinaryCounter & 0x08) ? LedOn(GREEN) : LedOff(GREEN);
+  }
+  
 } /* end LEDTestSM_Idle() */
      
 
