@@ -88,7 +88,15 @@ Promises:
 */
 void UserAppInitialize(void)
 {
-  
+  for(u8 i = 0; i < 8; i++) LedOff((LedNumberType)i);
+  LCDClearChars(0,20);
+  LCDClearChars(40,20);
+  LCDMessage(59,"=");
+  LCDMessage(0,"Test");
+  LCDMessage(40,"^");
+  LCDMessage(46,"v");
+  LCDMessage(53,">");
+  //LCDMessage(55,"=");
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -137,7 +145,107 @@ State Machine Function Definitions
 /* Wait for a message to be queued */
 static void UserAppSM_Idle(void)
 {
+    static u8 CurrentDigit=0;
+    static u32 CurrentNumber=0;
+    static u8 CurrentNumberIndex=0;
+    static u32 PastNumbers[10];
+    static bool hasPressedNotEquals=FALSE;
+    static u32 DisplayNumber=0;
+    static bool hasChanged=FALSE;
+    static u8 Timer;
+    u32 ForMath=0;
     
+    if(Timer > 0){
+      Timer++;
+    }
+    //test
+    if(Timer == 500){
+      LedOn(LCD_BLUE);
+      LedOn(LCD_GREEN);
+      LedOn(LCD_RED);
+    }
+    
+    if(WasButtonPressed(BUTTON0)){
+      ButtonAcknowledge(BUTTON0);
+      hasPressedNotEquals=TRUE;
+      CurrentDigit++;
+      if(CurrentDigit > 9){
+        CurrentDigit = 0;
+      }
+      DisplayNumber = 10*CurrentNumber+CurrentDigit;
+      hasChanged=TRUE;
+    }
+    if(WasButtonPressed(BUTTON1)){
+      ButtonAcknowledge(BUTTON1);
+      hasPressedNotEquals=TRUE;
+      if(CurrentDigit >= 1){
+        CurrentDigit--;
+      } else {
+        CurrentDigit = 9;
+      }
+      DisplayNumber = 10*CurrentNumber+CurrentDigit;
+      hasChanged=TRUE;
+    }
+    if(WasButtonPressed(BUTTON2)){
+      ButtonAcknowledge(BUTTON2);
+      hasPressedNotEquals=TRUE;
+      if(CurrentNumber < 1000000){
+        CurrentNumber *= 10;
+        CurrentNumber += CurrentDigit;
+        CurrentDigit=0;
+        DisplayNumber=10*CurrentNumber;
+        hasChanged=TRUE;
+      } else {
+        LedOff(LCD_GREEN);
+        LedOff(LCD_BLUE);
+        LedOn(LCD_RED);
+        Timer=1;
+      }
+    }
+    if(WasButtonPressed(BUTTON3)){
+      ButtonAcknowledge(BUTTON3);
+      if(!hasPressedNotEquals){
+        LCDClearChars(0,27);
+        for(int i=0;i<10;i++){
+          ForMath += PastNumbers[i];
+        }
+        DisplayNumber=ForMath;
+      } else {
+        CurrentNumber *= 10;
+        CurrentNumber += CurrentDigit;
+        PastNumbers[CurrentNumberIndex]=CurrentNumber;
+        CurrentNumber=0;
+        CurrentDigit=0;
+        CurrentNumberIndex++;
+        if(CurrentNumberIndex > 9){
+          CurrentNumberIndex=0;
+          LedOff(LCD_GREEN);
+          LedOff(LCD_BLUE);
+          LedOn(LCD_RED);
+        }
+        DisplayNumber=0;
+        hasPressedNotEquals=FALSE;
+      }
+      hasChanged=TRUE;
+    }
+    if(hasChanged){
+      LCDClearChars(0,20);
+      u32 x=0;
+      u8 c=0;
+      while(DisplayNumber){
+        x=DisplayNumber%10;
+        DisplayNumber/=10;
+        LCDMessage((u8) 19-c, (u8 []){48+x,0});
+        c++;
+      }
+      LCDClearChars(59,1);
+      if(hasPressedNotEquals){
+        LCDMessage(59,"+");
+      } else {
+        LCDMessage(59,"=");
+      }
+      hasChanged = FALSE;
+    }
 } /* end UserAppSM_Idle() */
      
 
