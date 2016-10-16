@@ -91,12 +91,8 @@ void UserAppInitialize(void)
   for(u8 i = 0; i < 8; i++) LedOff((LedNumberType)i);
   LCDClearChars(0,20);
   LCDClearChars(40,20);
-  LCDMessage(59,"=");
-  LCDMessage(0,"Test");
-  LCDMessage(40,"^");
-  LCDMessage(46,"v");
-  LCDMessage(53,">");
-  //LCDMessage(55,"=");
+  LCDMessage(0,"Calculator!");
+  LCDMessage(40,"^     v      >     =");
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -152,7 +148,9 @@ static void UserAppSM_Idle(void)
     static bool hasPressedNotEquals=FALSE;
     static u32 DisplayNumber=0;
     static bool hasChanged=FALSE;
-    static u8 Timer;
+    static u32 Timer;
+    static u8 Controls[21] = "^     v      >     =";
+    static u8 Display[21];
     u32 ForMath=0;
     
     if(Timer > 0){
@@ -189,7 +187,7 @@ static void UserAppSM_Idle(void)
     if(WasButtonPressed(BUTTON2)){
       ButtonAcknowledge(BUTTON2);
       hasPressedNotEquals=TRUE;
-      if(CurrentNumber < 1000000){
+      if(CurrentNumber < 42949672){
         CurrentNumber *= 10;
         CurrentNumber += CurrentDigit;
         CurrentDigit=0;
@@ -205,11 +203,12 @@ static void UserAppSM_Idle(void)
     if(WasButtonPressed(BUTTON3)){
       ButtonAcknowledge(BUTTON3);
       if(!hasPressedNotEquals){
-        LCDClearChars(0,27);
         for(int i=0;i<10;i++){
           ForMath += PastNumbers[i];
+          PastNumbers[i]=0;
         }
         DisplayNumber=ForMath;
+        ForMath=0;
       } else {
         CurrentNumber *= 10;
         CurrentNumber += CurrentDigit;
@@ -232,18 +231,25 @@ static void UserAppSM_Idle(void)
       LCDClearChars(0,20);
       u32 x=0;
       u8 c=0;
-      while(DisplayNumber){
+      while(c < 20){
         x=DisplayNumber%10;
         DisplayNumber/=10;
-        LCDMessage((u8) 19-c, (u8 []){48+x,0});
+        if(DisplayNumber || x){
+          Display[19-c]=48+x;
+        } else {
+          Display[19-c]=' ';
+        }
         c++;
       }
-      LCDClearChars(59,1);
+      Display[20]='\0';
+      LCDMessage(0,Display);
+      LCDClearChars(40,20);
       if(hasPressedNotEquals){
-        LCDMessage(59,"+");
+        Controls[19]='+';
       } else {
-        LCDMessage(59,"=");
+        Controls[19]='=';
       }
+      LCDMessage(40,Controls);
       hasChanged = FALSE;
     }
 } /* end UserAppSM_Idle() */
