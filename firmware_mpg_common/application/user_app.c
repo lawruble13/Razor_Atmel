@@ -151,7 +151,7 @@ static void UserAppSM_Idle(void)
     static u32 Timer;
     static u8 Controls[21] = "^     v      >     =";
     static u8 Display[21];
-    static u8 HeldCount;
+    static u32 HeldCount;
     u32 ForMath=0;
     
     if(Timer > 0){
@@ -231,6 +231,7 @@ static void UserAppSM_Idle(void)
         }
         DisplayNumber=ForMath;
         ForMath=0;
+        CurrentNumberIndex=0;
         LedOn(LCD_RED);
         LedOn(LCD_GREEN);
         LedOn(LCD_BLUE);
