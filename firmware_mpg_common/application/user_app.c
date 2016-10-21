@@ -151,6 +151,7 @@ static void UserAppSM_Idle(void)
     static u32 Timer;
     static u8 Controls[21] = "^     v      >     =";
     static u8 Display[21];
+    static u8 HeldCount;
     u32 ForMath=0;
     
     if(Timer > 0){
@@ -165,6 +166,7 @@ static void UserAppSM_Idle(void)
     
     if(WasButtonPressed(BUTTON0)){
       ButtonAcknowledge(BUTTON0);
+      HeldCount=0;
       hasPressedNotEquals=TRUE;
       CurrentDigit++;
       if(CurrentDigit > 9){
@@ -173,7 +175,17 @@ static void UserAppSM_Idle(void)
       DisplayNumber = 10*CurrentNumber+CurrentDigit;
       hasChanged=TRUE;
     }
+    if(IsButtonHeld(BUTTON0, (u32) 200*(HeldCount+3))){
+      CurrentDigit++;
+      if(CurrentDigit > 9){
+        CurrentDigit=0;
+      }
+      DisplayNumber = 10*CurrentNumber+CurrentDigit;
+      hasChanged=TRUE;
+      HeldCount++;
+    }
     if(WasButtonPressed(BUTTON1)){
+      HeldCount=0;
       ButtonAcknowledge(BUTTON1);
       hasPressedNotEquals=TRUE;
       if(CurrentDigit >= 1){
@@ -183,6 +195,16 @@ static void UserAppSM_Idle(void)
       }
       DisplayNumber = 10*CurrentNumber+CurrentDigit;
       hasChanged=TRUE;
+    }
+    if(IsButtonHeld(BUTTON1, (u32) 200*(HeldCount+3))){
+      if(CurrentDigit >= 1){
+        CurrentDigit--;
+      } else {
+        CurrentDigit = 9;
+      }
+      DisplayNumber = 10*CurrentNumber+CurrentDigit;
+      hasChanged=TRUE;
+      HeldCount++;
     }
     if(WasButtonPressed(BUTTON2)){
       ButtonAcknowledge(BUTTON2);
@@ -209,6 +231,9 @@ static void UserAppSM_Idle(void)
         }
         DisplayNumber=ForMath;
         ForMath=0;
+        LedOn(LCD_RED);
+        LedOn(LCD_GREEN);
+        LedOn(LCD_BLUE);
       } else {
         CurrentNumber *= 10;
         CurrentNumber += CurrentDigit;
