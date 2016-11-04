@@ -137,7 +137,18 @@ State Machine Function Definitions
 /* Wait for a message to be queued */
 static void UserAppSM_Idle(void)
 {
-    
+  for( u32 i = BUTTON0; i <= BUTTON3; i++){
+    if(WasButtonPressed(i)){
+      ButtonAcknowledge(i);
+      PWMAudioSetFrequency(BUZZER1,262);
+    }
+    if(IsButtonPressed(i)){
+      PWMAudioOn(BUZZER1);
+      break;
+    } else {
+      PWMAudioOff(BUZZER1);
+    }
+  }
 } /* end UserAppSM_Idle() */
      
 
