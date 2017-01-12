@@ -85,6 +85,7 @@ Includes
 /* Common application header files */
 #include "debug.h"
 #include "music.h"
+#include "bignum.h"
 #include "user_app.h"
 
 

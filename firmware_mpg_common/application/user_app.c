@@ -142,22 +142,30 @@ State Machine Function Definitions
 static void UserAppSM_Idle(void)
 {
     static u8 CurrentDigit=0;
-    static u32 CurrentNumber=0;
+    static bigUInt CurrentNumber = {NULL,0};
     static u8 CurrentNumberIndex=0;
-    static u32 PastNumbers[10];
-    static bool hasPressedNotEquals=FALSE;
-    static u32 DisplayNumber=0;
+    static bigUInt PastNumbers[32];
+    static bigUInt min20Digs = {NULL, 0};
+    static u8 defaultOperator = '=';
+    static bigUInt DisplayNumber={{0},1};
     static bool hasChanged=FALSE;
     static u32 Timer;
     static u8 Controls[21] = "^     v      >     =";
     static u8 Display[21];
     static u32 HeldCount;
-    u32 ForMath=0;
+    
+    if(min20Digs.length == 0){
+      min20Digs.digits = malloc(20);
+      for(int i = 0; i < 19; i++){
+        min20Digs.digits[i] = 0;
+      }
+      min20Digs.digits[19] = 1;
+      min20Digs.length = 20;
+    }
     
     if(Timer > 0){
       Timer++;
     }
-    //test
     if(Timer == 500){
       LedOn(LCD_BLUE);
       LedOn(LCD_GREEN);
@@ -167,12 +175,18 @@ static void UserAppSM_Idle(void)
     if(WasButtonPressed(BUTTON0)){
       ButtonAcknowledge(BUTTON0);
       HeldCount=0;
-      hasPressedNotEquals=TRUE;
+      defaultOperator = '+';
       CurrentDigit++;
       if(CurrentDigit > 9){
         CurrentDigit = 0;
       }
-      DisplayNumber = 10*CurrentNumber+CurrentDigit;
+      bigUInt_copy(&DisplayNumber, CurrentNumber);
+      DisplayNumber.digits = realloc(DisplayNumber.digits, DisplayNumber.length+1);
+      for(int i = DisplayNumber.length; i > 0; i--){
+        DisplayNumber.digits[i] = DisplayNumber.digits[i-1];
+      }
+      DisplayNumber.digits[0] = CurrentDigit;
+      DisplayNumber.length++;
       hasChanged=TRUE;
     }
     if(IsButtonHeld(BUTTON0, (u32) 200*(HeldCount+3))){
@@ -180,20 +194,33 @@ static void UserAppSM_Idle(void)
       if(CurrentDigit > 9){
         CurrentDigit=0;
       }
-      DisplayNumber = 10*CurrentNumber+CurrentDigit;
+      bigUInt_copy(&DisplayNumber, CurrentNumber);
+      DisplayNumber.digits = realloc(DisplayNumber.digits, DisplayNumber.length+1);
+      for(int i = DisplayNumber.length; i > 0; i--){
+        DisplayNumber.digits[i] = DisplayNumber.digits[i-1];
+      }
+      DisplayNumber.digits[0] = CurrentDigit;
+      DisplayNumber.length++;
       hasChanged=TRUE;
       HeldCount++;
     }
+    
     if(WasButtonPressed(BUTTON1)){
       HeldCount=0;
       ButtonAcknowledge(BUTTON1);
-      hasPressedNotEquals=TRUE;
+      defaultOperator = '+';
       if(CurrentDigit >= 1){
         CurrentDigit--;
       } else {
         CurrentDigit = 9;
       }
-      DisplayNumber = 10*CurrentNumber+CurrentDigit;
+      bigUInt_copy(&DisplayNumber, CurrentNumber);
+      DisplayNumber.digits = realloc(DisplayNumber.digits, DisplayNumber.length+1);
+      for(int i = DisplayNumber.length; i > 0; i--){
+        DisplayNumber.digits[i] = DisplayNumber.digits[i-1];
+      }
+      DisplayNumber.digits[0] = CurrentDigit;
+      DisplayNumber.length++;
       hasChanged=TRUE;
     }
     if(IsButtonHeld(BUTTON1, (u32) 200*(HeldCount+3))){
@@ -202,18 +229,35 @@ static void UserAppSM_Idle(void)
       } else {
         CurrentDigit = 9;
       }
-      DisplayNumber = 10*CurrentNumber+CurrentDigit;
+      bigUInt_copy(&DisplayNumber, CurrentNumber);
+      DisplayNumber.digits = realloc(DisplayNumber.digits, DisplayNumber.length+1);
+      for(int i = DisplayNumber.length; i > 0; i--){
+        DisplayNumber.digits[i] = DisplayNumber.digits[i-1];
+      }
+      DisplayNumber.digits[0] = CurrentDigit;
+      DisplayNumber.length++;
       hasChanged=TRUE;
       HeldCount++;
     }
+    
     if(WasButtonPressed(BUTTON2)){
       ButtonAcknowledge(BUTTON2);
-      hasPressedNotEquals=TRUE;
-      if(CurrentNumber < 42949672){
-        CurrentNumber *= 10;
-        CurrentNumber += CurrentDigit;
+      defaultOperator='+';
+      if(bigUInt_lessthan(CurrentNumber,min20Digs)){
+        CurrentNumber.digits = realloc(CurrentNumber.digits, CurrentNumber.length+1);
+        for(int i = CurrentNumber.length; i > 0; i--){
+          CurrentNumber.digits[i] = CurrentNumber.digits[i-1];
+        }
+        CurrentNumber.digits[0] = CurrentDigit;
+        CurrentNumber.length++;
         CurrentDigit=0;
-        DisplayNumber=10*CurrentNumber;
+        bigUInt_copy(&DisplayNumber, CurrentNumber);
+        DisplayNumber.digits = realloc(DisplayNumber.digits, DisplayNumber.length+1);
+        for(int i = DisplayNumber.length; i > 0; i--){
+          DisplayNumber.digits[i] = DisplayNumber.digits[i-1];
+        }
+        DisplayNumber.digits[0] = 0;
+        DisplayNumber.length++;
         hasChanged=TRUE;
       } else {
         LedOff(LCD_GREEN);
@@ -222,59 +266,67 @@ static void UserAppSM_Idle(void)
         Timer=1;
       }
     }
+    
     if(WasButtonPressed(BUTTON3)){
       ButtonAcknowledge(BUTTON3);
-      if(!hasPressedNotEquals){
+      if(defaultOperator == '='){
+        bigUInt ForMath;
+        ForMath = bigUInt_from_u32(0);
         for(int i=0;i<10;i++){
-          ForMath += PastNumbers[i];
-          PastNumbers[i]=0;
+          bigUInt_add_2_p(&ForMath,PastNumbers[i]);
+          free(PastNumbers[i].digits);
+          PastNumbers[i].digits = NULL;
+          PastNumbers[i].length = 0;
         }
-        DisplayNumber=ForMath;
-        ForMath=0;
+        bigUInt_copy(&DisplayNumber,ForMath);
+        free(ForMath.digits);
         CurrentNumberIndex=0;
         LedOn(LCD_RED);
         LedOn(LCD_GREEN);
         LedOn(LCD_BLUE);
       } else {
-        CurrentNumber *= 10;
-        CurrentNumber += CurrentDigit;
-        PastNumbers[CurrentNumberIndex]=CurrentNumber;
-        CurrentNumber=0;
+        CurrentNumber.digits = realloc(CurrentNumber.digits, CurrentNumber.length+1);
+        for(int i = CurrentNumber.length; i > 0; i--){
+          CurrentNumber.digits[i] = CurrentNumber.digits[i-1];
+        }
+        CurrentNumber.digits[0] = CurrentDigit;
+        CurrentNumber.length++;
+        bigUInt_copy(&PastNumbers[CurrentNumberIndex],CurrentNumber);
+        free(CurrentNumber.digits);
+        CurrentNumber.digits = NULL;
+        CurrentNumber.length = 0;
         CurrentDigit=0;
         CurrentNumberIndex++;
-        if(CurrentNumberIndex > 9){
+        if(CurrentNumberIndex > 31){
           CurrentNumberIndex=0;
           LedOff(LCD_GREEN);
           LedOff(LCD_BLUE);
           LedOn(LCD_RED);
         }
-        DisplayNumber=0;
-        hasPressedNotEquals=FALSE;
+        free(DisplayNumber.digits);
+        DisplayNumber.digits = NULL;
+        DisplayNumber.length = 0;
+        defaultOperator='=';
       }
       hasChanged=TRUE;
     }
     if(hasChanged){
-      LCDClearChars(0,20);
+      LCDClearChars(LINE1_START_ADDR,20);
       u32 x=0;
       u8 c=0;
       while(c < 20){
-        x=DisplayNumber%10;
-        DisplayNumber/=10;
-        if(DisplayNumber || x){
-          Display[19-c]=48+x;
+        if(c < DisplayNumber.length){
+          x = 48 + DisplayNumber.digits[c];
         } else {
-          Display[19-c]=' ';
+          x = ' ';
         }
+        Display[19-c]=x;
         c++;
       }
       Display[20]='\0';
       LCDMessage(0,Display);
-      LCDClearChars(40,20);
-      if(hasPressedNotEquals){
-        Controls[19]='+';
-      } else {
-        Controls[19]='=';
-      }
+      LCDClearChars(LINE2_START_ADDR,20);
+      Controls[19] = defaultOperator;
       LCDMessage(40,Controls);
       hasChanged = FALSE;
     }
